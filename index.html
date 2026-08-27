@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sage Wisdom — first effective, then efficient</title>
+<meta name="description" content="A skill for your coding agent: it finds what in your AI pipeline should be cheaper, faster, or more deterministic — then proves each fix with an eval.">
+<link rel="canonical" href="https://sagewisdom.bot/">
+<meta name="theme-color" content="#12140f">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sagewisdom.bot/">
+<meta property="og:site_name" content="Sage Wisdom">
+<meta property="og:title" content="Sage Wisdom">
+<meta property="og:description" content="A skill for your coding agent: it finds what in your AI pipeline should be cheaper, faster, or more deterministic — then proves each fix with an eval.">
+<meta property="og:image" content="https://sagewisdom.bot/og.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sage Wisdom">
+<meta name="twitter:description" content="A skill for your coding agent: it finds what in your AI pipeline should be cheaper, faster, or more deterministic — then proves each fix with an eval.">
+<meta name="twitter:image" content="https://sagewisdom.bot/og.png">
+<style>
+  :root{
+    --bg:#12140f;
+    --panel:#1a1d16;
+    --ink:#e8e6dc;
+    --dim:#8a8f79;
+    --dimmer:#565b48;
+    --sage:#9db380;
+    --sage-bright:#c9dba8;
+    --line:#2c2f26;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;padding:0 1rem;
+  }
+  main{width:100%;max-width:920px;padding:3rem 0 2rem;display:flex;flex-direction:column;align-items:center}
+  pre{font-family:inherit;line-height:1.15;white-space:pre}
+  #gridbg{position:absolute;top:0;left:0;z-index:0;pointer-events:none}
+  main,footer{position:relative;z-index:1}
+  #titlespace{width:100%}
+  #subtitle{color:var(--dim);margin:1.1rem 0 2rem;font-size:.85rem;letter-spacing:.12em;background:var(--bg);padding:.35rem .9rem}
+  #scenewrap{width:100%;display:flex;justify-content:center;overflow:hidden;background:var(--bg);padding:10px 0}
+  #scene .cb{color:var(--dimmer)}
+  #scene .ck{color:var(--ink)}
+  #scene .cx{color:var(--sage-bright)}
+  #scene .cs{color:var(--sage)}
+  #scene .cm{color:#6f7a5a}
+  .copyblock{margin:2.75rem 0 0;text-align:center;background:var(--bg);padding:1rem 1.5rem}
+  #copybtn{
+    background:none;border:none;cursor:pointer;
+    font-family:inherit;color:var(--sage-bright);
+    padding:0;
+  }
+  #copybtn pre{line-height:1.2;font-size:1rem}
+  #copybtn:hover{color:#fff}
+  #copybtn.done{color:var(--sage)}
+  .hint{color:var(--dimmer);font-size:.75rem;margin-top:.6rem}
+  .blurb{
+    width:100%;max-width:34rem;color:var(--dim);font-size:.85rem;line-height:1.7;
+    margin:2.5rem auto 0;text-align:left;background:var(--bg);padding:1.25rem 1.5rem;
+  }
+  .blurb b{color:var(--ink);font-weight:600}
+  .blurb a{color:var(--sage-bright);text-underline-offset:3px}
+  details{margin:2.5rem auto 0;max-width:40rem;width:100%;background:var(--bg);padding:.75rem 1rem}
+  summary{
+    color:var(--dimmer);cursor:pointer;text-align:center;font-size:.8rem;
+    letter-spacing:.1em;list-style:none;
+  }
+  summary:hover{color:var(--sage-bright)}
+  pre#skillview{
+    margin-top:1rem;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:1.25rem;max-height:24rem;overflow:auto;
+    font-size:.72rem;line-height:1.55;color:var(--dim);
+    white-space:pre-wrap;word-break:break-word;
+  }
+  footer{
+    width:100%;max-width:920px;margin-top:auto;padding:2.25rem 0 1.75rem;
+    border-top:1px solid var(--line);font-size:.78rem;color:var(--dimmer);
+    display:flex;flex-direction:column;gap:.5rem;align-items:center;
+    background:var(--bg);
+  }
+  footer a{color:var(--dimmer);text-underline-offset:3px}
+  footer a:hover{color:var(--sage-bright)}
+</style>
+</head>
+<body>
+<canvas id="gridbg" aria-hidden="true"></canvas>
+<main>
+  <div id="titlespace"></div>
+  <div id="subtitle">first effective, then efficient</div>
+
+  <div id="scenewrap"><pre id="scene"></pre></div>
+
+  <div class="copyblock">
+    <button id="copybtn" aria-label="copy the skill to your clipboard"><pre id="btnface"></pre></button>
+    <div class="hint">a one-line prompt for your agent -- paste it into claude code or codex</div>
+  </div>
+
+  <div class="blurb"><p>a skill for your coding agent. copy it, paste it into claude code
+or codex, and it finds what in your ai pipeline should be cheaper, faster,
+or more deterministic -- then proves each fix with an eval.</p></div>
+
+  <details>
+    <summary>[ + read the skill ]</summary>
+    <pre id="skillview"></pre>
+  </details>
+</main>
+
+<footer>
+  <a href="https://github.com/austintgriffith/sage-wisdom">[ github ]</a>
+  <span>(mit)</span>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- title ---------- */
+var FONT={
+  S:[" ####","#    "," ### ","    #","#### "],
+  A:[" ### ","#   #","#####","#   #","#   #"],
+  G:[" ####","#    ","#  ##","#   #"," ### "],
+  E:["#####","#    ","###  ","#    ","#####"],
+  W:["#   #","#   #","# # #","## ##","#   #"],
+  I:["###"," # "," # "," # ","###"],
+  D:["#### ","#   #","#   #","#   #","#### "],
+  O:[" ### ","#   #","#   #","#   #"," ### "],
+  M:["#   #","## ##","# # #","#   #","#   #"],
+  " ":["  ","  ","  ","  ","  "]
+};
+function titleCells(s){
+  var cells=[],col=0;
+  for(var i=0;i<s.length;i++){
+    var g=FONT[s[i]];
+    for(var r=0;r<5;r++)for(var j=0;j<g[r].length;j++)if(g[r][j]==="#")cells.push([col+j,r]);
+    col+=g[0].length+1;
+  }
+  return {cells:cells,cols:col-1};
+}
+var TITLE=titleCells("SAGE WISDOM");
+var REDUCED=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- square-matrix background ---------- */
+var gridCanvas=document.getElementById("gridbg");
+var gctx=gridCanvas.getContext("2d");
+var P=14,bornAt=performance.now();
+var gCols=0,gRows=0,base=null,phase=null,spark=null,heat=null;
+var mx=-1e9,my=-1e9;
+function hash(x,y){
+  var h=Math.imul(x+1,374761393)^Math.imul(y+1,668265263);
+  h=Math.imul(h^(h>>>15),2246822519);h^=h>>>13;
+  return (h>>>0)/4294967296;
+}
+var FS=[];
+function fsFor(a){
+  var b=Math.min(36,Math.round(a*40));
+  return FS[b]||(FS[b]="rgba(157,179,128,"+(b/40)+")");
+}
+function layoutBG(){
+  var avail=document.querySelector("main").clientWidth;
+  P=Math.max(4,Math.min(15,Math.floor(avail/(TITLE.cols+2))));
+  document.getElementById("titlespace").style.height=(6*P)+"px";
+  var w=document.documentElement.clientWidth;
+  var h=Math.max(document.body.scrollHeight,window.innerHeight);
+  var dpr=window.devicePixelRatio||1;
+  gridCanvas.style.width=w+"px";gridCanvas.style.height=h+"px";
+  gridCanvas.width=Math.round(w*dpr);gridCanvas.height=Math.round(h*dpr);
+  gctx.setTransform(dpr,0,0,dpr,0,0);
+  gCols=Math.ceil(w/P);gRows=Math.ceil(h/P);
+  var n=gCols*gRows;
+  base=new Float32Array(n);phase=new Float32Array(n);
+  spark=new Uint8Array(n);heat=new Float32Array(n);
+  for(var iy=0;iy<gRows;iy++)for(var ix=0;ix<gCols;ix++){
+    var i=iy*gCols+ix;
+    base[i]=0.05+hash(ix,iy)*0.09;
+    phase[i]=hash(ix+511,iy)*6.283;
+    spark[i]=hash(ix,iy+911)>0.92?1:0;
+  }
+  drawBG(performance.now());
+}
+function drawBG(now){
+  if(!base)return;
+  var w=gridCanvas.clientWidth,h=gridCanvas.clientHeight;
+  gctx.clearRect(0,0,w,h);
+  var s=Math.max(2,Math.round(P*0.6)),off=Math.floor((P-s)/2);
+  var fade=REDUCED?1:Math.min(1,(now-bornAt)/1400);
+  var t=now/1000;
+  // pour heat into the cells under the mouse
+  if(mx>-1e8){
+    var mcx=Math.floor(mx/P),mcy=Math.floor(my/P),R=6;
+    for(var dy=-R;dy<=R;dy++)for(var dx=-R;dx<=R;dx++){
+      var cx2=mcx+dx,cy2=mcy+dy;
+      if(cx2<0||cy2<0||cx2>=gCols||cy2>=gRows)continue;
+      var g0=0.5*Math.exp(-(dx*dx+dy*dy)/7);
+      var ii=cy2*gCols+cx2;
+      if(g0>heat[ii])heat[ii]=g0;
+    }
+  }
+  var fadeMul=Math.min(1,fade*2+0.1);
+  for(var iy=0;iy<gRows;iy++){
+    for(var ix=0;ix<gCols;ix++){
+      var i=iy*gCols+ix;
+      var a=base[i]*fadeMul;
+      if(spark[i]){
+        var tw=Math.sin(t*0.9+phase[i]);
+        if(tw>0)a+=Math.pow(tw,10)*0.30*fade;
+      }
+      if(heat[i]>0.004){a+=heat[i];heat[i]*=0.94;}else heat[i]=0;
+      if(a>0.9)a=0.9;
+      gctx.fillStyle=fsFor(a);
+      gctx.fillRect(ix*P+off,iy*P+off,s,s);
+    }
+  }
+  // title: lit squares, random fade-in, then a gentle breathe
+  var ts=document.getElementById("titlespace").getBoundingClientRect();
+  var startCol=Math.round((w-TITLE.cols*P)/2/P);
+  var startRow=Math.round((ts.top+window.scrollY)/P);
+  gctx.save();
+  gctx.shadowColor="rgba(201,219,168,0.8)";
+  gctx.shadowBlur=P*0.7;
+  gctx.fillStyle="#c9dba8";
+  for(var k=0;k<TITLE.cells.length;k++){
+    var cx=TITLE.cells[k][0],cy=TITLE.cells[k][1];
+    var hz=hash(cx,cy+97);
+    if(fade<hz)continue;
+    gctx.globalAlpha=REDUCED?1:0.86+0.14*Math.sin(t*0.8+hz*6.283);
+    gctx.fillRect((startCol+cx)*P+off,(startRow+cy)*P+off,s,s);
+  }
+  gctx.restore();
+}
+var lastFrame=0;
+function bgLoop(now){
+  if(now-lastFrame>=33){lastFrame=now;drawBG(now);}
+  requestAnimationFrame(bgLoop);
+}
+if(!REDUCED){
+  requestAnimationFrame(bgLoop);
+  window.addEventListener("mousemove",function(e){
+    mx=e.clientX+window.scrollX;my=e.clientY+window.scrollY;
+  });
+  window.addEventListener("touchmove",function(e){
+    var t0=e.touches[0];
+    if(t0){mx=t0.clientX+window.scrollX;my=t0.clientY+window.scrollY;}
+  },{passive:true});
+}
+
+/* ---------- scene constants ---------- */
+var COLS=100, ROWS=18;
+var BELT_Y=16, ROLL_Y=17, BOX_BOT=15;
+var FR_L=34, FR_R=66;          // scanner frame outer columns
+var WIN_L=FR_L+2, WIN_R=FR_R-2; // x-ray window columns
+var TOP0=4, TXT=5, BAR=6, TOP3=7; // scanner head rows
+var PILLAR_TOP=8;
+
+// one mascot per phase, perched atop the machine:
+// the squid scans, the owl evaluates, the robot implements
+var CHARS=[
+  {art:[" /\\ ","/__\\","(..)","/||\\"], x:FR_L+3},
+  {art:[" ,_, ","(O,O)","(   )",' " " '], x:Math.floor((FR_L+FR_R)/2)-2},
+  {art:[" ___ ","[o_o]"," |=| "," / \\ "], x:FR_R-8}
+];
+
+var PAYLOADS=[
+  ["gpt-4 call","$.04 each","x 38k /mo"],
+  ["12k token","prompt for","a yes/no"],
+  ["llm doing","avg() by","vibes"],
+  ["frontier","model on a","cron loop"],
+  ["retry x3","no eval","no golden"],
+  ["3.2s wait","on the","hot path"],
+  ["fenced","json blob","parser rip"],
+  ["temp 0.9","for a","boolean"],
+  ["regex-able","known fmt","llm parse"],
+  ["choice()","conf: 1.0","always"],
+  ["$$$","tok","$$$"],
+  ["??? tokens","nobody","measured"]
+];
+
+/* ---------- grid ---------- */
+var chars=[], cls=[];
+function clearGrid(){
+  for(var r=0;r<ROWS;r++){
+    chars[r]=[]; cls[r]=[];
+    for(var c=0;c<COLS;c++){chars[r][c]=" ";cls[r][c]="cb";}
+  }
+}
+function put(r,c,ch,cl){
+  if(r<0||r>=ROWS||c<0||c>=COLS)return;
+  chars[r][c]=ch; cls[r][c]=cl;
+}
+function text(r,c,s,cl){for(var i=0;i<s.length;i++)put(r,c+i,s[i],cl);}
+
+/* ---------- boxes ---------- */
+function makeBox(){
+  var p=PAYLOADS[Math.floor(Math.random()*PAYLOADS.length)];
+  var maxLen=0;
+  for(var i=0;i<p.length;i++) if(p[i].length>maxLen)maxLen=p[i].length;
+  var iw=maxLen+2+Math.floor(Math.random()*3);
+  var ih=p.length+(Math.random()<0.4?1:0);
+  var w=iw+2, h=ih+2;
+  // center payload in the interior
+  var art=[];
+  var padTop=Math.floor((ih-p.length)/2);
+  for(var r=0;r<ih;r++){
+    var line=(r>=padTop&&r-padTop<p.length)?p[r-padTop]:"";
+    var lp=Math.floor((iw-line.length)/2);
+    art.push(Array(lp+1).join(" ")+line+Array(iw-lp-line.length+1).join(" "));
+  }
+  return {x:-w,w:w,h:h,art:art};
+}
+function drawBox(b){
+  var top=BOX_BOT-b.h+1;
+  for(var j=0;j<b.w;j++){
+    var c=b.x+j;
+    if(c<0||c>=COLS)continue;
+    var xr=(c>=WIN_L&&c<=WIN_R);
+    for(var i=0;i<b.h;i++){
+      var r=top+i, ch, cl;
+      if(i===0||i===b.h-1){          // horizontal borders
+        ch=xr?".":(j===0||j===b.w-1?"+":"-");
+        cl=xr?"cs":"ck";
+      }else if(j===0||j===b.w-1){    // vertical borders
+        ch=xr?":":"|"; cl=xr?"cs":"ck";
+      }else{                          // interior
+        ch=xr?b.art[i-1][j-1]:" ";
+        cl="cx";
+      }
+      put(r,c,ch,cl);
+    }
+  }
+}
+
+/* ---------- scene pieces ---------- */
+function drawBelt(t){
+  for(var c=0;c<COLS;c++){
+    var m=((c-t)%6+6)%6===0;
+    put(BELT_Y,c,m?"o":"=",'cb');
+  }
+  var spin="|/-\\"[t%4];
+  for(var c2=4;c2<COLS;c2+=9)put(ROLL_Y,c2,spin,"cm");
+}
+function drawScanner(t,active){
+  var c;
+  for(c=FR_L+1;c<FR_R;c++)put(TOP0,c,"_","cs");
+  var inner=FR_R-FR_L-1;
+  // text row: the phase of the loop
+  put(TXT,FR_L,"|","cs");put(TXT,FR_R,"|","cs");
+  for(c=FR_L+1;c<FR_R;c++)put(TXT,c," ","cs");
+  var N=12,CYC=48,FL=8,STEP=CYC+FL;
+  var stage=Math.floor(t/STEP)%3;
+  var label=["SCANNING","EVALUATING","IMPLEMENTING"][stage];
+  text(TXT,FR_L+1+Math.floor((inner-label.length)/2),label,active?"cx":"cs");
+  // bar row: squares fill up, flash, next phase
+  put(BAR,FR_L,"|","cs");put(BAR,FR_R,"|","cs");
+  for(c=FR_L+1;c<FR_R;c++)put(BAR,c," ","cs");
+  var ph=t%STEP;
+  var fill=ph<CYC?Math.floor(ph/CYC*(N+1)):N;
+  var flashOn=ph>=CYC&&(ph&1)===0;
+  var bp=FR_L+1+Math.floor((inner-(N+2))/2);
+  put(BAR,bp,"[","cs");put(BAR,bp+N+1,"]","cs");
+  for(var q=0;q<N;q++){
+    if(ph>=CYC)put(BAR,bp+1+q,"#",flashOn?"cx":"cm");
+    else put(BAR,bp+1+q,q<fill?"#":".",q<fill?"cx":"cm");
+  }
+  // head bottom
+  put(TOP3,FR_L,"|","cs");put(TOP3,FR_R,"|","cs");
+  for(c=FR_L+1;c<FR_R;c++)put(TOP3,c,"_","cs");
+  for(var r=PILLAR_TOP;r<=ROLL_Y;r++){
+    put(r,FR_L,"|","cs");put(r,FR_L+1,"|","cs");
+    put(r,FR_R-1,"|","cs");put(r,FR_R,"|","cs");
+  }
+  var mascot=CHARS[stage];
+  for(var w=0;w<mascot.art.length;w++)text(w,mascot.x,mascot.art[w],"cs");
+}
+function drawBeam(t){
+  var span=WIN_R-WIN_L;
+  var x=WIN_L+Math.round((Math.sin(t/5)+1)/2*span);
+  for(var r=PILLAR_TOP;r<=BOX_BOT;r++)put(r,x,":","cm");
+}
+
+/* ---------- render ---------- */
+var esc={"&":"&amp;","<":"&lt;",">":"&gt;"};
+var sceneEl=document.getElementById("scene");
+function render(){
+  var out=[];
+  for(var r=0;r<ROWS;r++){
+    var row="",run="",runCls=null;
+    for(var c=0;c<COLS;c++){
+      var cl=chars[r][c]===" "?runCls||"cb":cls[r][c];
+      if(cl!==runCls&&run!==""){row+='<span class="'+runCls+'">'+run+"</span>";run="";}
+      runCls=cl;
+      var ch=chars[r][c];
+      run+=esc[ch]||ch;
+    }
+    if(run!=="")row+='<span class="'+runCls+'">'+run+"</span>";
+    out.push(row);
+  }
+  sceneEl.innerHTML=out.join("\n");
+}
+
+/* ---------- animation ---------- */
+var boxes=[],tick=0,nextGap=6;
+function seed(){
+  var xs=[64,36,6];
+  for(var i=0;i<xs.length;i++){var b=makeBox();b.x=xs[i];boxes.push(b);}
+}
+function step(){
+  tick++;
+  for(var i=0;i<boxes.length;i++)boxes[i].x++;
+  boxes=boxes.filter(function(b){return b.x<COLS;});
+  var newest=boxes[boxes.length-1];
+  if(!newest||newest.x>nextGap){
+    boxes.push(makeBox());
+    nextGap=6+Math.floor(Math.random()*20);
+  }
+  var active=boxes.some(function(b){return b.x<=WIN_R&&b.x+b.w-1>=WIN_L;});
+  clearGrid();
+  drawBelt(tick);
+  drawBeam(tick);
+  for(var j=0;j<boxes.length;j++)drawBox(boxes[j]);
+  drawScanner(tick,active);
+  render();
+}
+
+/* ---------- responsive fit ---------- */
+function charRatio(){
+  var probe=document.createElement("span");
+  probe.style.cssText="position:absolute;visibility:hidden;white-space:pre;font:100px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace";
+  probe.textContent="MMMMMMMMMMMMMMMMMMMM";
+  document.body.appendChild(probe);
+  var r=probe.getBoundingClientRect().width/2000;
+  probe.remove();
+  return r;
+}
+function fit(){
+  var ratio=charRatio();
+  var avail=document.querySelector("main").clientWidth;
+  sceneEl.style.fontSize=Math.max(4.2,Math.min(13,avail/(COLS*ratio)))+"px";
+  layoutBG();
+}
+window.addEventListener("resize",fit);
+
+seed();
+step();
+fit();
+if(!REDUCED)setInterval(step,90);
+document.querySelector("details").addEventListener("toggle",function(){layoutBG();});
+window.addEventListener("load",function(){layoutBG();});
+
+/* ---------- copy the skill ---------- */
+fetch("SKILL.md").then(function(r){return r.text();}).then(function(t){
+  document.getElementById("skillview").textContent=t;
+}).catch(function(){
+  document.getElementById("skillview").textContent="(couldn't load SKILL.md)";
+});
+var PROMPT="Read https://sagewisdom.bot/SKILL.md and follow the steps to audit this repo's ai pipeline.\n";
+var BTN_IDLE ="+--------------------------+\n|    $ copy the skill      |\n+--------------------------+";
+var BTN_DONE ="+--------------------------+\n|  ok! paste to your agent |\n+--------------------------+";
+var face=document.getElementById("btnface"),btn=document.getElementById("copybtn");
+face.textContent=BTN_IDLE;
+btn.addEventListener("click",function(){
+  navigator.clipboard.writeText(PROMPT).then(function(){
+    face.textContent=BTN_DONE;btn.classList.add("done");
+    setTimeout(function(){face.textContent=BTN_IDLE;btn.classList.remove("done");},2500);
+  });
+});
+})();
+</script>
+</body>
+</html>
