@@ -459,7 +459,7 @@ fetch("SKILL.md").then(function(r){return r.text();}).then(function(t){
 }).catch(function(){
   document.getElementById("skillview").textContent="(couldn't load SKILL.md)";
 });
-var PROMPT="Read https://sagewisdom.bot/SKILL.md and follow the steps to audit this repo's ai pipeline.\n";
+var PROMPT="Read https://sagewisdom.bot/skill.md and follow the steps\n";
 var BTN_IDLE ="+--------------------------+\n|    $ copy the skill      |\n+--------------------------+";
 var BTN_DONE ="+--------------------------+\n|  ok! paste to your agent |\n+--------------------------+";
 var face=document.getElementById("btnface"),btn=document.getElementById("copybtn");
