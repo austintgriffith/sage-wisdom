@@ -1,21 +1,20 @@
-# sage-wisdom
+# Sage Wisdom
 
-![sage intro](scripts/sage-intro-preview.gif)
+![sagewisdom.bot](assets/site-preview.gif)
 
-A skill for your coding agent. Point it at any repo that calls LLMs and it
-finds the decisions that should be cheaper, faster, or more deterministic —
-then **proves each fix with an eval before shipping it**.
+**[sagewisdom.bot](https://sagewisdom.bot)** — a skill for your coding agent.
+It finds the decisions in your AI pipeline that should be cheaper, faster, or
+more deterministic — then **proves each fix with an eval before shipping it**.
 
 > First effective, then efficient. First you make the thing work, then you
 > ask "what did we learn?" and make it work better.
 
 ## Use it
 
-Tell your agent (Claude Code, Cursor, etc.):
+Paste this into a Claude Code or Codex session in your project folder:
 
 ```
-Clone https://github.com/clawdbotatg/sage-wisdom and follow its SKILL.md
-to audit this repo.
+Read https://sagewisdom.bot/SKILL.md and follow the steps to audit this repo's ai pipeline.
 ```
 
 Or install it as a local skill: copy this directory into your skills folder
@@ -26,12 +25,29 @@ the eval runs against [Levanto Sage](https://docs.levanto.ai) (`SAGE_API_KEY`
 env var, plans from $14/mo at
 [platform.levanto.ai](https://platform.levanto.ai)).
 
+## What is Sage?
+
+![sage intro](scripts/sage-intro-preview.gif)
+
+[Levanto Sage](https://docs.levanto.ai) is a classifier+LLM decision API. You
+ask it enumerable judgment questions — yes/no, a score, a pick, a label — and
+it answers in ~200ms with a calibrated probability. It structurally cannot
+generate text, which makes it safe to point at untrusted input. The skill
+walks every model call in your repo down the descent ladder and finds where
+it fits:
+
+```
+frontier llm  →  small llm  →  sage  →  plain code
+```
+
 ## What's inside
 
 - `SKILL.md` — the skill: a three-stage engagement (scan → prove → ship,
   the user decides at each gate), three scan lenses (delete/cache/batch the
   call · make it deterministic · the descent ladder), a rethink pass that
   questions the pipeline's shape, and a pattern library of known wins
+- `index.html` + assets — the [sagewisdom.bot](https://sagewisdom.bot) site
+  (static, deploys on Vercel; serves `SKILL.md` alongside the page)
 - `scripts/sage_client.py` — minimal stdlib Sage client, quirks pre-paid
 - `scripts/sweep.py` — sweep question phrasings against a golden set
 - `scripts/shootout.py` — current impl vs candidate, head to head
