@@ -34,13 +34,14 @@
     --line:#2c2f26;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:125%}
   body{
     background:var(--bg);color:var(--ink);
     font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     display:flex;flex-direction:column;align-items:center;
     min-height:100vh;padding:0 1rem;
   }
-  main{width:100%;max-width:920px;padding:3rem 0 2rem;display:flex;flex-direction:column;align-items:center}
+  main{width:100%;max-width:1150px;padding:3rem 0 2rem;display:flex;flex-direction:column;align-items:center}
   pre{font-family:inherit;line-height:1.15;white-space:pre}
   #gridbg{position:absolute;top:0;left:0;z-index:0;pointer-events:none}
   main,footer{position:relative;z-index:1}
@@ -81,7 +82,7 @@
     white-space:pre-wrap;word-break:break-word;
   }
   footer{
-    width:100%;max-width:920px;margin-top:auto;padding:2.25rem 0 1.75rem;
+    width:100%;max-width:1150px;margin-top:auto;padding:2.25rem 0 1.75rem;
     border-top:1px solid var(--line);font-size:.78rem;color:var(--dimmer);
     display:flex;flex-direction:column;gap:.5rem;align-items:center;
     background:var(--bg);
@@ -165,7 +166,7 @@ function fsFor(a){
 }
 function layoutBG(){
   var avail=document.querySelector("main").clientWidth;
-  P=Math.max(4,Math.min(15,Math.floor(avail/(TITLE.cols+2))));
+  P=Math.max(4,Math.min(19,Math.floor(avail/(TITLE.cols+2))));
   document.getElementById("titlespace").style.height=(6*P)+"px";
   var w=document.documentElement.clientWidth;
   var h=Math.max(document.body.scrollHeight,window.innerHeight);
@@ -441,7 +442,7 @@ function charRatio(){
 function fit(){
   var ratio=charRatio();
   var avail=document.querySelector("main").clientWidth;
-  sceneEl.style.fontSize=Math.max(4.2,Math.min(13,avail/(COLS*ratio)))+"px";
+  sceneEl.style.fontSize=Math.max(4.2,Math.min(16.25,avail/(COLS*ratio)))+"px";
   layoutBG();
 }
 window.addEventListener("resize",fit);
