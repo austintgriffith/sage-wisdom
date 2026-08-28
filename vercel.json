@@ -1,0 +1,3 @@
+{
+  "rewrites": [{ "source": "/skill.md", "destination": "/SKILL.md" }]
+}
