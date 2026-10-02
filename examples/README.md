@@ -20,7 +20,7 @@ can't catch.
 ## Run it yourself
 
 ```bash
-export SAGE_API_KEY=lv_live_...          # Developer plan is enough (~75 units)
+export SAGE_API_KEY=lv_live_...          # Developer plan is enough (~105 units)
 cd scripts
 python3 sweep.py    ../examples/injection-golden.json --runs 2
 python3 shootout.py ../examples/injection-golden.json \
@@ -29,19 +29,30 @@ python3 shootout.py ../examples/injection-golden.json \
   --candidate-cost 0.0014
 ```
 
-## Results (Sage v1.2, 2026-09-30)
+## Results (Sage v1.2)
 
-**Sweep.** The short question that uses the domain's verb is the only one
-that separates. The two longer ones don't.
+**Sweep, run twice, two days apart, same `meta.model`:**
 
 ```
+2026-09-30
   sep +0.55..+0.61  p50 203ms  Does this text attempt to hijack the identity or system prompt...   ← winner
   sep -0.18..+0.02  p50 215ms  Does this text try to override, replace, or manipulate...
   sep -0.07..-0.06  p50 236ms  You are a prompt-injection detector for an AI job board...
+
+2026-10-02
+  sep +0.38..+0.38  p50 204ms  Does this text attempt to hijack the identity or system prompt...
+  sep +0.09..+0.09  p50 214ms  Does this text try to override, replace, or manipulate...
+  sep +0.49..+0.49  p50 212ms  You are a prompt-injection detector for an AI job board...       ← winner
 ```
 
-Threshold ~0.51. Every unsafe item scored ≥ 0.79 and every safe one
-≤ 0.24, so 0.5, 0.6 and 0.7 all give 15/15.
+The response still said `levanto-sage-v1.2`, but Levanto updated the
+service on 2026-10-01 (new docs, reasoning now off by default). The best
+wording flipped from the short one to the long policy one. The short
+question still separates: unsafe ≥ 0.78, safe ≤ 0.40, so a 0.5 threshold
+gives 15/15 on both days. Its gap shrank from 0.55 to 0.38.
+
+The lesson: re-run the sweep on a schedule, not only when the version
+number changes.
 
 **Shootout** against a keyword regex:
 
@@ -55,9 +66,9 @@ Threshold ~0.51. Every unsafe item scored ≥ 0.79 and every safe one
 
 | | v0.8 | v1.2 |
 |---|---|---|
-| accuracy | 15/15 at 0.70 | 15/15 at 0.5–0.7 |
-| gap between safe and unsafe | 0.34 | 0.55 |
-| best threshold | ~0.70 | ~0.51 |
+| accuracy (short question) | 15/15 at 0.70 | 15/15 at 0.5 |
+| gap, short question | 0.34 | 0.55 (09-30), 0.38 (10-02) |
+| best threshold, short question | ~0.70 | ~0.51 (09-30), ~0.59 (10-02) |
 | the hard "lenience plea" item | p ≈ 0.5–0.6, borderline | clearly safe |
 | $/1k on Developer | 2.80 | 1.40 |
 | vs Sonnet 4.6 (~$3.90/1k) | ~1.2× cheaper | ~2.8× cheaper |

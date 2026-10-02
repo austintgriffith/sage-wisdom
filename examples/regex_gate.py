@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Naive keyword-regex injection gate — the cheap baseline for the shootout.
-Reads text on stdin. Exit 0 = "safe/no", nonzero = "unsafe/yes" (shootout's
+Reads text on stdin. Exit 0 = "safe/no", 1 = "unsafe/yes" (shootout's
 convention). It exists to be beaten: it catches literal trigger phrases and
 misses everything paraphrased, which is the whole point of the P1 golden set.
 """

@@ -6,10 +6,15 @@ proposal — no swap ships without winning (or tying) here.
 Each contender is a spec string:
   sage:QUESTION[:THRESHOLD]   one Sage yes/no question (default threshold 0.5)
   cmd:SHELL                   shell command; sample text on stdin;
-                              exit 0 = "no", nonzero = "yes"
+                              exit 0 = "no", exit 1 = "yes", anything
+                              else = error (the run stops, stderr shown)
                               (wrap your current LLM call in a tiny script)
 
-Input JSON: {"samples": [{"text": "...", "label": true}, ...]}
+Input JSON (the skill's golden-set format; "samples"/"text"/"label" also works):
+  {"items": [{"content": "...", "expected": true}, ...]}
+
+Exit status: 0 if the candidate matches or beats current, 1 if it loses —
+so it can run in CI as the regression test.
 
 Usage:
   python3 shootout.py golden.json \
@@ -24,7 +29,7 @@ Leave this file + the golden set in the repo — it is the regression test for
 the swap. Re-run on model bumps and on real-traffic drift.
 """
 import argparse, json, statistics, subprocess, sys, time
-from sage_client import yesno
+from sage_client import yesno, load_golden
 
 
 def make_runner(spec):
@@ -40,9 +45,16 @@ def make_runner(spec):
         return lambda text: yesno(text, q) >= thr
     if spec.startswith("cmd:"):
         shell = spec[4:]
-        return lambda text: subprocess.run(
-            shell, shell=True, input=text.encode(),
-            capture_output=True, timeout=120).returncode != 0
+
+        def run(text):
+            r = subprocess.run(shell, shell=True, input=text.encode(),
+                               capture_output=True, timeout=120)
+            if r.returncode not in (0, 1):
+                sys.exit(f"{shell!r} exited {r.returncode} — that's an error, not "
+                         f"a verdict (0 = no, 1 = yes):\n"
+                         f"{r.stderr.decode(errors='replace')[-2000:]}")
+            return r.returncode == 1
+        return run
     sys.exit(f"bad spec {spec!r} — must start with sage: or cmd:")
 
 
@@ -68,7 +80,7 @@ def main():
     ap.add_argument("--candidate-cost", type=float, default=None, help="$/call")
     a = ap.parse_args()
 
-    samples = json.load(open(a.golden))["samples"]
+    samples, _ = load_golden(a.golden)
     rows = [evaluate("current", make_runner(a.current), samples),
             evaluate("candidate", make_runner(a.candidate), samples)]
     costs = {"current": a.current_cost, "candidate": a.candidate_cost}
@@ -86,6 +98,7 @@ def main():
     if cand["correct"] < cur["correct"]:
         print("\nVERDICT: candidate LOSES on accuracy — do not swap on these "
               "samples. Sweep phrasings (sweep.py) or keep the current impl.")
+        sys.exit(1)
     else:
         print("\nVERDICT: candidate matches or beats current accuracy. "
               "Check the latency and cost columns, then swap — and keep this "

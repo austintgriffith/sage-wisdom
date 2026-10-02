@@ -154,8 +154,9 @@ Then ask four questions of each call:
    hot paths, on thresholds, on parsed output, and on untrusted input
    (it can't be talked into writing anything).
 4. **Doing double duty?** Split it: Sage takes the verdict, a small LLM
-   writes the prose. This also stops untrusted text from steering the
-   verdict.
+   writes the prose. The verdict then can't be turned into free text an
+   attacker wrote; it is always one of your answers. Attackers can still
+   push *which* answer it picks, so keep adversarial items in the eval.
 
 **The rethink.** For the top three sites, state the job in one sentence
 without saying "AI", and ask how you'd build it today:
@@ -203,14 +204,16 @@ a small golden set as a regression test, and ship if the user wants to.
 
    - **Wordings:** try 3 or more: a terse one that uses the domain's verb,
      and one taken from their policy text. Run Sage twice per wording.
-     Terse usually wins; long explanations usually lose.
+     Neither short nor long always wins: on our injection set the winner
+     flipped between two runs two days apart.
    - **Thresholds:** for `yesno` and `tags`, print the gap between the
      lowest `expected: true` probability and the highest `expected: false`
      one. The best threshold sits in that gap. Send a band around it to
      the old model instead of deciding.
    - **Misses:** list each miss with its content, so the user can see
      them.
-   - **Cost:** Sage $/1k = units per item × plan price per unit.
+   - **Cost:** Sage $ per 1k items = units per item × plan price per unit
+     × 1,000 (Developer: 1 unit × $0.0014 × 1,000 = $1.40).
 
    For yes/no gates in Python, `scripts/sweep.py` (wordings) and
    `scripts/shootout.py` (today vs Sage) already do this.
@@ -226,7 +229,7 @@ a small golden set as a regression test, and ship if the user wants to.
   the error path again on the code you wrote.
 - Write down the wording, the threshold and the model version.
 
-## 4 · Sage cheat sheet (checked live on levanto-sage-v1.2, 2026-09-30)
+## 4 · Sage cheat sheet (checked live on levanto-sage-v1.2, 2026-10-02)
 
 | kind | best for | tip |
 |---|---|---|
@@ -310,16 +313,20 @@ notes):
 - "N questions on one document cost 1 unit." Now it's N. Use tags.
 - "Tags can't carry a description." Now the name is the description.
 - "Choice confidence is useless." Now choice returns `null` on near-ties.
-- "Use `latency_mode: fast`." Retired; ignored.
+- "`latency_mode: fast` packs questions together." Now `latency_mode`
+  only affects `choice`: `fast` (default) or `quality` (~100 ms slower,
+  more accurate; use it for rules-heavy picks).
 - "Thresholds from v0.8." Re-sweep: on our injection set the best
-  threshold moved from 0.70 to ~0.51 on v1.2.
+  threshold moved from 0.70 to ~0.51 on v1.2. Even the same version
+  name can change: Levanto updated v1.2 on 2026-10-01 and the best
+  wording on that set flipped. Re-sweep on a schedule.
 
-**Reasoning:**
+**Reasoning** (top-level `reasoning`, default `off`, not billed):
 - `off` for gates and hot paths (~100–450 ms).
-- `auto` for policy judgments (default).
+- `auto` for policy judgments.
 - `on` for the hardest offline calls, and for rules with steps (tax
-  brackets, refund policy, game moves). Up to 6 s; set your timeout above
-  that.
+  brackets, refund policy, game moves). Up to 10 s; set your timeout
+  above that.
 - Each answer's `meta.reasoning.ran` says whether it thought.
 
 **Documents that work best:**
@@ -353,9 +360,9 @@ curl -s https://sage.levanto.ai/decide/batch \
   after 2 s.
 - Use `/decide/batch` for everything. One entry in `requests` is one
   document with its questions.
-- Official clients: `pip install levanto`, `npm install levanto`
-  (https://docs.levanto.ai/sdk.md). `scripts/sage_client.py` in this skill
-  is a no-dependency Python client.
+- Use plain HTTPS, or `scripts/sage_client.py` in this skill (Python, no
+  dependencies). Levanto's SDK packages were unpublished on 2026-10-01;
+  don't tell users to install them until they're back.
 - v1.2 is close to deterministic: the same input gives the same answer
   almost every time (we saw one small wobble, 0.92 vs 0.88). Still set
   thresholds with some margin.
@@ -467,10 +474,11 @@ Stops jailbreaks and harmful requests before an agent sees them.
   ```
   If the old call also wrote a summary, move the summary to a small LLM.
   **Proven:** on a live AI job board's 15-item golden set (v1.2,
-  2026-09-30): 15/15, ~200 ms, safe and unsafe separated by 0.55. A
-  keyword regex got 12/15; it missed every attack with no trigger words
-  ("forget what you were told, your real purpose is…"). Two longer
-  wordings did not separate at all. Worked run: `examples/README.md`.
+  2026-09-30 and 2026-10-02): 15/15 at 0.5, ~200 ms. A keyword regex got
+  12/15; it missed every attack with no trigger words ("forget what you
+  were told, your real purpose is…"). On 10-02 a longer wording that
+  spells out the job board's policy separated even better, so sweep
+  both. Worked run: `examples/README.md`.
 
 ### 2 · Agent action approval
 
@@ -723,8 +731,14 @@ Lets a small model do the work and Sage check it.
     contradicts:  states the opposite or implies it is false
     says_nothing: does not address it either way
   ```
-- **Then:** any confident flag (> 0.7) sends the item to the big model or
-  to a human. Everything else ships at small-model cost.
+- **Then:**
+  - Any flag > 0.7: send the item to the big model or a human.
+  - Citation `contradicts` or `says_nothing`: reject the citation or
+    send it for review.
+  - Any `null` answer, any tag with `applies: null`, or an API error:
+    escalate. Don't ship it.
+  - Only items with no flags and a `supports` verdict ship at small-model
+    cost.
 
 ### 10 · Picking values instead of generating them
 
@@ -911,7 +925,9 @@ see it. Update this file; it is the product.
   means "safe" is a hole, whatever model sits behind it.
 - If a regex ties Sage on your golden set, the set is too easy.
 - Thresholds move between Sage versions (0.70 → 0.51 on the same set,
-  v0.8 → v1.2). Re-sweep on every `meta.model` change.
+  v0.8 → v1.2). Re-sweep on every `meta.model` change, and on a schedule:
+  a service update on 2026-10-01 kept the name v1.2 and still flipped
+  which wording won.
 - Sage beat Sonnet on a gate where an 8-second wait didn't matter, but
   on price alone it barely won (v0.8, 2026-08). Price changes; check
   before you pitch it.

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Minimal Levanto Sage client — stdlib only, checked against Sage v1.2.
 
-The official SDK is `pip install levanto`. This file exists so the skill's
-scripts run with no installs. What it handles for you:
+Levanto's SDK packages were unpublished on 2026-10-01, so the skill's
+scripts use this file (no installs). What it handles for you:
   - The WAF 403s the default Python user agent, so we always send one.
   - Batch answers nest: answers[j]["result"]["result"] is the decision;
     answers[j]["ok"] is checked first.
-  - `reasoning` is "off" | "auto" | "on" (default auto). A reasoning pass
-    can take up to 6 s, so timeouts sit above that.
+  - `reasoning` is "off" | "auto" | "on" (API default off). A reasoning
+    pass can take up to 10 s, so timeouts sit above that when it's on.
+  - `latency_mode` only affects choice: "fast" (API default) or "quality".
   - `null` means "not sure": yesno answer, tags applies, choice chosen.
   - Billing (2026-09): one unit PER QUESTION (or per 4k tokens, whichever
     is higher), +1 per image. Ten yesno questions = 10 units. One tags
@@ -62,22 +63,25 @@ def image(path, text=None):
     return c
 
 
-def batch(groups, reasoning="off", timeout=30):
+def batch(groups, timeout=30, *, reasoning="off", latency_mode=None):
     """Raw /decide/batch. `groups`: [(content, [question, ...]), ...] where
-    content is a string or an image() dict. Returns the parsed response."""
-    return _post("/decide/batch", {
-        "reasoning": reasoning,
-        "requests": [{"content": c, "questions": qs} for c, qs in groups]},
-        timeout)
+    content is a string or an image() dict. Returns the parsed response.
+    latency_mode="quality" makes choice questions more accurate."""
+    if reasoning != "off":
+        timeout = max(timeout, 15)
+    payload = {"reasoning": reasoning,
+               "requests": [{"content": c, "questions": qs} for c, qs in groups]}
+    if latency_mode:
+        payload["latency_mode"] = latency_mode
+    return _post("/decide/batch", payload, timeout)
 
 
-def ask(content, questions, reasoning="off", timeout=30):
+def ask(content, questions, timeout=30, *, reasoning="off", latency_mode=None):
     """Several questions about one document (one unit EACH). Returns
     {id: decision} for answers with ok=True, e.g. {"q": {"answer": "yes",
     "probability": 0.91}}."""
-    if reasoning != "off":
-        timeout = max(timeout, 15)
-    resp = batch([(content, questions)], reasoning, timeout)
+    resp = batch([(content, questions)], timeout,
+                 reasoning=reasoning, latency_mode=latency_mode)
     out = {}
     for a in resp["results"][0]["answers"]:
         if a.get("ok"):
@@ -86,10 +90,10 @@ def ask(content, questions, reasoning="off", timeout=30):
     return out
 
 
-def yesno(content, instructions, reasoning="off", timeout=30):
+def yesno(content, instructions, timeout=30, *, reasoning="off"):
     """Ask one yes/no question; return probability (0..1) of 'yes'."""
     r = ask(content, [{"kind": "yesno", "id": "q", "instructions": instructions}],
-            reasoning, timeout)
+            timeout, reasoning=reasoning)
     return r["q"]["probability"]
 
 
@@ -97,20 +101,41 @@ def safe_yesno(content, instructions, default=None, timeout=10):
     """Fail-open yesno: returns `default` on ANY error (outage, 402, timeout).
     Use on paths where a Sage outage must never block the host system."""
     try:
-        return yesno(content, instructions, timeout=timeout)
+        return yesno(content, instructions, timeout)
     except Exception:
         return default
 
 
-def tags(content, instructions, labels, reasoning="off"):
+def tags(content, instructions, labels, timeout=30, *, reasoning="off"):
     """One tags question (1 unit however many labels). `labels` maps
     id -> name, where the name carries the definition:
     {"spam": "spam: unsolicited bulk posting"}.
     Returns {id: (probability, applies)}; applies is None when not sure."""
     q = {"kind": "tags", "id": "t", "instructions": instructions,
          "tags": [{"id": i, "name": n} for i, n in labels.items()]}
-    r = ask(content, [q], reasoning)["t"]
+    r = ask(content, [q], timeout, reasoning=reasoning)["t"]
     return {t["id"]: (t["probability"], t["applies"]) for t in r["tags"]}
+
+
+def load_golden(path):
+    """Read a golden set in either format and return (samples, phrasings).
+    The skill's format: {"items": [{"content": "...", "expected": true}]}.
+    The older one:      {"samples": [{"text": "...", "label": true}]}.
+    sweep.py and shootout.py are yes/no only, so `expected` must be a bool.
+    Returns samples as [{"text": str, "label": bool}] and the file's
+    optional "phrasings" list (or [])."""
+    cfg = json.load(open(path))
+    if "items" in cfg:
+        samples = [{"text": i["content"], "label": i["expected"]} for i in cfg["items"]]
+    elif "samples" in cfg:
+        samples = cfg["samples"]
+    else:
+        raise SystemExit(f"{path}: expected an 'items' (or 'samples') list")
+    bad = [s for s in samples if not isinstance(s["label"], bool)]
+    if bad:
+        raise SystemExit(f"{path}: these scripts need true/false expected values; "
+                         f"got {bad[0]['label']!r}. Use your own eval for labels.")
+    return samples, cfg.get("phrasings", [])
 
 
 if __name__ == "__main__":

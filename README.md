@@ -34,8 +34,8 @@ env var, plans from $14/mo for 10k decisions at
 content (text or an image), a question, and the possible answers — yes/no,
 labels, a pick, a score, a ranking. It answers in a few hundred ms with a
 calibrated probability, thinks first on hard questions, and says `null`
-when it isn't sure. It can't write text, which makes it safe to point at
-untrusted input.
+when it isn't sure. It can't write text, so untrusted input can't make it
+say anything — though it can still try to sway which answer it picks.
 
 The skill checks every model call in your repo: should it exist, should it
 be plain code, is it a decision Sage can take — and backs each answer with

@@ -1,4 +1,4 @@
-# Sage API — field notes (checked live on levanto-sage-v1.2, 2026-09-30)
+# Sage API — field notes (checked live on levanto-sage-v1.2, 2026-10-02)
 
 What we learned by calling `sage.levanto.ai` with a real key. The official
 docs are at https://docs.levanto.ai (index: /llms.txt). This file holds the
@@ -30,12 +30,13 @@ untrusted input and nothing can leak back out as text.
 
 ## Wording
 
-- Terse beats thorough. Explaining your policy in the question made
-  results worse in every test we ran (v0.8 and v1.2).
-- Use the domain's own verb. On the injection set, "attempt to hijack the
-  identity or system prompt of the AI that reads it" separated by +0.55;
-  two longer paraphrases didn't separate at all (v1.2).
-- Always sweep at least three wordings on real data.
+- Short vs long isn't settled. On v0.8 and on v1.2 (2026-09-30) the short
+  question with the domain's verb ("attempt to hijack the identity or
+  system prompt of the AI that reads it") won and policy explanations
+  lost. On 2026-10-02, same model name, the long policy wording won
+  (+0.49 vs +0.38).
+- Always sweep at least three wordings on real data, and re-sweep on a
+  schedule — the service can change under the same version name.
 
 ## Transport
 
@@ -47,12 +48,16 @@ untrusted input and nothing can leak back out as text.
 - Unknown fields → 400 with a clear message. 401 bad key. 402 allowance
   used up (hard stop until next month). 503 loading or content too long;
   retry after a couple of seconds.
-- `reasoning`: `off` | `auto` (default) | `on`. Up to 6 s, not billed.
-  Answers carry `meta.reasoning.ran`. Set client timeouts above 6 s
+- `reasoning`: `off` (default) | `auto` | `on`. Up to 10 s, not billed.
+  Answers carry `meta.reasoning.ran`. Set client timeouts above 10 s
   unless you use `off`.
 - Images (beta): `{"kind": "image", "media": "data:image/jpeg;base64,…",
   "text": "optional context"}`. Max 4 MiB. Not with `sort` or grounding.
-- `latency_mode: "fast"` is retired and ignored.
+- `latency_mode` (top level) only affects `choice`: `fast` (default) or
+  `quality` (~100 ms slower per choice, more accurate). It used to pack
+  questions together; it doesn't anymore.
+- Levanto's SDK packages (`levanto` on pip/npm) were unpublished on
+  2026-10-01. Use HTTPS or `scripts/sage_client.py`.
 
 ## Measured on v1.2 (2026-09-30)
 
@@ -88,5 +93,6 @@ don't roll over.
   fail-closed per host on purpose, and match the host. `safe_yesno()` in
   `scripts/sage_client.py` is a fail-open wrapper.
 - Don't send secrets in `content`.
-- Re-sweep thresholds when `meta.model` changes. They moved from 0.70 to
-  ~0.51 on the same set between v0.8 and v1.2.
+- Re-sweep thresholds when `meta.model` changes, and periodically. They
+  moved from 0.70 to ~0.51 between v0.8 and v1.2, and the winning wording
+  flipped after a same-name update on 2026-10-01.

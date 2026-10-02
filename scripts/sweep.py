@@ -3,15 +3,16 @@
 any Sage question — wording moves results more than any other variable, and a
 phrasing that reads well to a human is not necessarily one that separates.
 
-Input JSON:
+Input JSON (the skill's golden-set format; "samples"/"text"/"label" also works):
 {
-  "samples":   [{"text": "...", "label": true}, ...],   // label true = "yes" expected
-  "phrasings": ["Does this text ...?", "Is this ...?", ...]
+  "items":     [{"content": "...", "expected": true}, ...],  // true = "yes" expected
+  "phrasings": ["Does this text ...?", "Is this ...?", ...]  // optional
 }
 
 Usage:
   export SAGE_API_KEY=lv_live_...
   python3 sweep.py golden.json --runs 3
+  python3 sweep.py golden.json --phrasing "Does this ...?" --phrasing "Is this ...?"
 
 Output: per-phrasing separation (min yes-labeled probability minus max
 no-labeled probability) for each run, plus a recommended threshold and
@@ -22,7 +23,7 @@ spread is your margin of safety and a single run lies. Either way, set the thres
 real traffic with margin. Cost: len(samples) x len(phrasings) x runs units.
 """
 import json, statistics, sys, time
-from sage_client import yesno
+from sage_client import yesno, load_golden
 
 
 def sweep(samples, phrasing):
@@ -39,11 +40,15 @@ def sweep(samples, phrasing):
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
-    cfg = json.load(open(sys.argv[1]))
+    samples, phrasings = load_golden(sys.argv[1])
     runs = int(sys.argv[sys.argv.index("--runs") + 1]) if "--runs" in sys.argv else 2
-    samples, results = cfg["samples"], []
+    phrasings = phrasings + [sys.argv[i + 1] for i, a in enumerate(sys.argv)
+                             if a == "--phrasing"]
+    if not phrasings:
+        sys.exit("no phrasings: add a \"phrasings\" list to the file or pass --phrasing")
+    results = []
 
-    for ph in cfg["phrasings"]:
+    for ph in phrasings:
         per_run = [sweep(samples, ph) for _ in range(runs)]
         seps = [r["sep"] for r in per_run]
         results.append({"phrasing": ph, "runs": per_run,

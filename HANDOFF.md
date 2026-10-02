@@ -20,6 +20,10 @@ Launch target Monday 2026-10-05, US morning, with Levanto.
 - Billing: one unit per question now. Ten yesno on one doc = 10 units.
   One tags question = 1 unit. Developer is $14 / 10k.
 - Injection set: still 15/15, gap 0.34 → 0.55, best threshold 0.70 → 0.51.
+  On 10-02 (same name v1.2, service updated 10-01) the long policy
+  wording won instead (+0.49 vs +0.38); short one still 15/15 at 0.5.
+- Levanto unpublished its pip/npm SDK on 10-01 and changed docs:
+  reasoning defaults off (10 s cap); latency_mode now only for choice.
 - leftclaw scan: the intake gate and finding dedup (14/15 on one audit)
   are wins; severity scoring lost (3/16). Raw audit findings are client
   data and are not in this repo.
