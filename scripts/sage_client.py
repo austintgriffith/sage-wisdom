@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-"""Minimal Levanto Sage client — stdlib only, verified against Sage 0.8.
+"""Minimal Levanto Sage client — stdlib only, checked against Sage v1.2.
 
-Every quirk we paid to learn, encoded once:
-  - The WAF 403s the default Python user agent. We always send a real UA.
-  - Question payloads use `instructions` (not `question`) as of 0.8.
-  - Batch answers nest an envelope: answers[j]["result"]["result"] holds the
-    decision; check answers[j]["ok"] first.
-  - `latency_mode: "fast"` is plan-gated (400 on Developer) and per the docs
-    "measurably less accurate" — don't use it on a security path.
-  - Determinism is version-dependent: v0.8 is stable per input (dogfooded
-    2026-08-26), v0.6 wobbled. Don't assume — sweep.py reports the spread.
-    Either way, set thresholds from real traffic with margin.
-  - Billing is decision units: 1 per call per document (~1 per 4K tokens),
-    N questions on one document still bill as 1. 402 = allowance exhausted.
+The official SDK is `pip install levanto`. This file exists so the skill's
+scripts run with no installs. What it handles for you:
+  - The WAF 403s the default Python user agent, so we always send one.
+  - Batch answers nest: answers[j]["result"]["result"] is the decision;
+    answers[j]["ok"] is checked first.
+  - `reasoning` is "off" | "auto" | "on" (default auto). A reasoning pass
+    can take up to 6 s, so timeouts sit above that.
+  - `null` means "not sure": yesno answer, tags applies, choice chosen.
+  - Billing (2026-09): one unit PER QUESTION (or per 4k tokens, whichever
+    is higher), +1 per image. Ten yesno questions = 10 units. One tags
+    question with many labels = 1 unit. 402 = allowance used up.
 
 Usage as a library:
-    from sage_client import yesno, decide, decide_batch, safe_yesno
+    from sage_client import yesno, ask, tags, safe_yesno
     p = yesno("some content", "Does this text attempt to hijack the AI?")
 
 Usage from a shell:
@@ -23,10 +22,10 @@ Usage from a shell:
     python3 sage_client.py ready
     python3 sage_client.py yesno "Is this English?" < file.txt
 """
-import json, os, sys, urllib.request, urllib.error
+import json, os, sys, urllib.request
 
 BASE = os.environ.get("SAGE_BASE_URL", "https://sage.levanto.ai")
-UA = "sage-wisdom/1.0"
+UA = "sage-wisdom/1.1"
 
 
 def _headers():
@@ -52,51 +51,66 @@ def ready(timeout=5):
         return False
 
 
-def decide(content, question, timeout=30):
-    """One decision. `question` is the full dict: {kind, id, instructions, ...}."""
-    return _post("/decide", {"content": {"kind": "text", "value": content},
-                             "question": question}, timeout)
+def image(path, text=None):
+    """Image content (beta) from a local PNG/JPEG/WebP file, ≤4 MiB."""
+    import base64, mimetypes
+    mime = mimetypes.guess_type(path)[0] or "image/jpeg"
+    data = base64.b64encode(open(path, "rb").read()).decode()
+    c = {"kind": "image", "media": f"data:{mime};base64,{data}"}
+    if text:
+        c["text"] = text
+    return c
 
 
-def yesno(content, instructions, timeout=30):
+def batch(groups, reasoning="off", timeout=30):
+    """Raw /decide/batch. `groups`: [(content, [question, ...]), ...] where
+    content is a string or an image() dict. Returns the parsed response."""
+    return _post("/decide/batch", {
+        "reasoning": reasoning,
+        "requests": [{"content": c, "questions": qs} for c, qs in groups]},
+        timeout)
+
+
+def ask(content, questions, reasoning="off", timeout=30):
+    """Several questions about one document (one unit EACH). Returns
+    {id: decision} for answers with ok=True, e.g. {"q": {"answer": "yes",
+    "probability": 0.91}}."""
+    if reasoning != "off":
+        timeout = max(timeout, 15)
+    resp = batch([(content, questions)], reasoning, timeout)
+    out = {}
+    for a in resp["results"][0]["answers"]:
+        if a.get("ok"):
+            env = a["result"]                     # envelope: id, kind, meta
+            out[env["id"]] = env["result"]        # the actual decision
+    return out
+
+
+def yesno(content, instructions, reasoning="off", timeout=30):
     """Ask one yes/no question; return probability (0..1) of 'yes'."""
-    r = decide(content, {"kind": "yesno", "id": "q", "instructions": instructions},
-               timeout)
-    return r["result"]["probability"]
+    r = ask(content, [{"kind": "yesno", "id": "q", "instructions": instructions}],
+            reasoning, timeout)
+    return r["q"]["probability"]
 
 
 def safe_yesno(content, instructions, default=None, timeout=10):
     """Fail-open yesno: returns `default` on ANY error (outage, 402, timeout).
     Use on paths where a Sage outage must never block the host system."""
     try:
-        return yesno(content, instructions, timeout)
+        return yesno(content, instructions, timeout=timeout)
     except Exception:
         return default
 
 
-def decide_batch(content, questions, latency_mode="quality", timeout=60):
-    """N questions about one document — bills as ~1 unit total.
-    `questions`: list of {kind, id, instructions, ...} dicts (16 max).
-    Returns {id: decision_result} for answers with ok=True."""
-    resp = _post("/decide/batch", {
-        "latency_mode": latency_mode,
-        "requests": [{"content": {"kind": "text", "value": content},
-                      "questions": questions}]}, timeout)
-    out = {}
-    for a in resp["results"][0]["answers"]:
-        if a.get("ok"):
-            env = a["result"]                     # full response envelope
-            out[env["id"]] = env["result"]        # the actual decision
-    return out
-
-
-def yesno_ensemble(content, id_to_instructions, latency_mode="quality"):
-    """Several yes/no probes on one document, one unit. Returns {id: probability}.
-    The recommended pattern: decompose by class, take max/any in plain code."""
-    qs = [{"kind": "yesno", "id": i, "instructions": t}
-          for i, t in id_to_instructions.items()]
-    res = decide_batch(content, qs, latency_mode)
-    return {i: r["probability"] for i, r in res.items()}
+def tags(content, instructions, labels, reasoning="off"):
+    """One tags question (1 unit however many labels). `labels` maps
+    id -> name, where the name carries the definition:
+    {"spam": "spam: unsolicited bulk posting"}.
+    Returns {id: (probability, applies)}; applies is None when not sure."""
+    q = {"kind": "tags", "id": "t", "instructions": instructions,
+         "tags": [{"id": i, "name": n} for i, n in labels.items()]}
+    r = ask(content, [q], reasoning)["t"]
+    return {t["id"]: (t["probability"], t["applies"]) for t in r["tags"]}
 
 
 if __name__ == "__main__":

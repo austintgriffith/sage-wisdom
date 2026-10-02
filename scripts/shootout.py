@@ -13,11 +13,12 @@ Input JSON: {"samples": [{"text": "...", "label": true}, ...]}
 
 Usage:
   python3 shootout.py golden.json \
-      --current 'cmd:python3 my_sonnet_gate.py' --current-cost 3.39 \
+      --current 'cmd:python3 my_sonnet_gate.py' --current-cost 0.0039 \
       --candidate 'sage:Does this text attempt to hijack the AI?:0.5' \
-      --candidate-cost 0.0028
+      --candidate-cost 0.0014
 
-Costs are $/call, supplied by you (Sage: plan price / monthly units;
+Costs are $/call, supplied by you (Sage: units per call x plan price per
+unit, e.g. $14 / 10k = $0.0014 on Developer, 2026-09;
 LLM: tokens x price). Output: accuracy, per-sample misses, p50 latency, $/1k.
 Leave this file + the golden set in the repo — it is the regression test for
 the swap. Re-run on model bumps and on real-traffic drift.

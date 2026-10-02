@@ -2,6 +2,35 @@
 
 Session notes for whoever picks this up next. Newest entry first.
 
+## 2026-10-02 — v1 update, merged with Marco's rewrite
+
+**What changed:** SKILL.md is now Marco's 2026-09-27 rewrite (15-recipe
+gallery, assess/invent, "First make it work. Then make it wise.") with our
+parts merged in: the full scan checklist, subscription-capacity math, the
+rethink, error-path tracing, and a lessons list. Added recipe 16 (merging
+duplicate findings) and our injection gate inside recipe 1. reference.md,
+sage_client.py, the script docs, examples/README.md (re-run on v1.2) and
+the site copy are all updated for Sage v1.
+
+**Decisions made:** evals are required when a swap replaces a call that
+works, optional for new features (Marco wanted optional everywhere).
+Launch target Monday 2026-10-05, US morning, with Levanto.
+
+**What we learned on v1.2 (2026-09-30)**
+- Billing: one unit per question now. Ten yesno on one doc = 10 units.
+  One tags question = 1 unit. Developer is $14 / 10k.
+- Injection set: still 15/15, gap 0.34 → 0.55, best threshold 0.70 → 0.51.
+- leftclaw scan: the intake gate and finding dedup (14/15 on one audit)
+  are wins; severity scoring lost (3/16). Raw audit findings are client
+  data and are not in this repo.
+
+**Open**
+- og.png and assets/site-preview.gif still show the old subtitle.
+- The page overflows sideways on a 390px-wide window (was true before
+  this change too).
+- Dedup needs a 20–50 pair set from several audits before it's "proven".
+- Marco should review the merged SKILL.md before launch.
+
 ## 2026-09-08 — research session, no code changes
 
 **What changed:** nothing in this repo. The site and skill are as of `1c744fa`.

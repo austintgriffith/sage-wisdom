@@ -16,9 +16,9 @@ Usage:
 Output: per-phrasing separation (min yes-labeled probability minus max
 no-labeled probability) for each run, plus a recommended threshold and
 escalation band for the winner. The sep_min..sep_max range across runs tells
-you whether your model version is deterministic (v0.8 observed stable per
-input, 2026-08-26) or wobbles (v0.6 did) — if it wobbles, the spread is your
-margin of safety and a single run lies. Either way, set the threshold from
+you whether your model version is stable per input (v1.2 nearly is: one
+small wobble seen, 2026-09-30) or wobbles (v0.6 did) — if it wobbles, the
+spread is your margin of safety and a single run lies. Either way, set the threshold from
 real traffic with margin. Cost: len(samples) x len(phrasings) x runs units.
 """
 import json, statistics, sys, time

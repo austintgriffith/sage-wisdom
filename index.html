@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sage Wisdom — first effective, then efficient</title>
-<meta name="description" content="A skill for your coding agent: it finds what in your AI pipeline should be cheaper, faster, or more deterministic — then proves each fix with an eval.">
+<title>Sage Wisdom — first make it work, then make it wise</title>
+<meta name="description" content="A skill for your coding agent: it finds where a fast decision model makes your AI product faster, cheaper, safer or better — and tests each swap before it ships.">
 <link rel="canonical" href="https://sagewisdom.bot/">
 <meta name="theme-color" content="#12140f">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -14,13 +14,13 @@
 <meta property="og:url" content="https://sagewisdom.bot/">
 <meta property="og:site_name" content="Sage Wisdom">
 <meta property="og:title" content="Sage Wisdom">
-<meta property="og:description" content="A skill for your coding agent: it finds what in your AI pipeline should be cheaper, faster, or more deterministic — then proves each fix with an eval.">
+<meta property="og:description" content="A skill for your coding agent: it finds where a fast decision model makes your AI product faster, cheaper, safer or better — and tests each swap before it ships.">
 <meta property="og:image" content="https://sagewisdom.bot/og.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Sage Wisdom">
-<meta name="twitter:description" content="A skill for your coding agent: it finds what in your AI pipeline should be cheaper, faster, or more deterministic — then proves each fix with an eval.">
+<meta name="twitter:description" content="A skill for your coding agent: it finds where a fast decision model makes your AI product faster, cheaper, safer or better — and tests each swap before it ships.">
 <meta name="twitter:image" content="https://sagewisdom.bot/og.png">
 <style>
   :root{
@@ -69,6 +69,9 @@
   }
   .blurb b{color:var(--ink);font-weight:600}
   .blurb a{color:var(--sage-bright);text-underline-offset:3px}
+  .blurb p+p{margin-top:.9rem}
+  .gallery ol{margin:.6rem 0 .9rem 1.4rem;padding:0}
+  .gallery li{padding-left:.3rem}
   details{margin:2.5rem auto 0;max-width:40rem;width:100%;background:var(--bg);padding:.75rem 1rem}
   summary{
     color:var(--dimmer);cursor:pointer;text-align:center;font-size:.8rem;
@@ -95,7 +98,7 @@
 <canvas id="gridbg" aria-hidden="true"></canvas>
 <main>
   <div id="titlespace"></div>
-  <div id="subtitle">first effective, then efficient</div>
+  <div id="subtitle">first make it work, then make it wise</div>
 
   <div id="scenewrap"><pre id="scene"></pre></div>
 
@@ -105,8 +108,32 @@
   </div>
 
   <div class="blurb"><p>a skill for your coding agent. copy it, paste it into claude code
-or codex, and it finds what in your ai pipeline should be cheaper, faster,
-or more deterministic -- then proves each fix with an eval.</p></div>
+or codex, and it finds where a fast decision model makes your ai product
+faster, cheaper, safer or better. every swap gets tested before it ships.</p>
+<p>it can also <b>invent</b>: new features you get when a judgment takes
+200ms instead of 3 seconds. built on <a href="https://levanto.ai">levanto sage</a>,
+the decision model that can see and think.</p></div>
+
+  <div class="blurb gallery"><p><b>things it knows how to decide</b></p>
+<ol>
+<li>jailbreak and injection gates</li>
+<li>approving agent actions before they run</li>
+<li>moderation against plain-english rules</li>
+<li>sensitive data before it leaks</li>
+<li>live news and social sentiment</li>
+<li>email and ticket triage</li>
+<li>which model should answer</li>
+<li>which skill or tool an agent needs</li>
+<li>checking an llm's extractions and citations</li>
+<li>picking values instead of generating them</li>
+<li>pruning a long agent's context</li>
+<li>supervising agents that run unattended</li>
+<li>skipping agent passes a job doesn't need</li>
+<li>questions and scores on images</li>
+<li>game moves and npc behavior</li>
+<li>merging duplicate findings</li>
+</ol>
+<p>see more at <a href="https://gallery.levanto.ai">gallery.levanto.ai</a></p></div>
 
   <details>
     <summary>[ + read the skill ]</summary>
@@ -278,7 +305,7 @@ var PAYLOADS=[
   ["fenced","json blob","parser rip"],
   ["temp 0.9","for a","boolean"],
   ["regex-able","known fmt","llm parse"],
-  ["choice()","conf: 1.0","always"],
+  ["llm picks","1 of 4","in 3.2s"],
   ["$$$","tok","$$$"],
   ["??? tokens","nobody","measured"]
 ];
