@@ -29,9 +29,11 @@ Launch target Monday 2026-10-05, US morning, with Levanto.
   data and are not in this repo.
 
 **Open**
-- og.png and assets/site-preview.gif still show the old subtitle.
-- The page overflows sideways on a 390px-wide window (was true before
-  this change too).
+- og.png and site-preview.gif now show the new subtitle (text redrawn on
+  the old images; the layout in them is the pre-125% one).
+- Phones: real iPhone/Android emulation showed only a 4px overflow from
+  the copy button; fixed. A plain headless window at 390px looks broken
+  but that's the test, not the site (no mobile viewport).
 - Dedup needs a 20–50 pair set from several audits before it's "proven".
 - Marco should review the merged SKILL.md before launch.
 
