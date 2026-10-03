@@ -265,7 +265,7 @@ choice "Which team owns this?"
 ```
 
 This is the request it stands for (`POST /decide/batch`, one group, three
-questions, 3 units):
+questions, 1 unit):
 
 ```json
 {
@@ -298,10 +298,10 @@ Read the answers at `results[0].answers[j].result.result`:
 Check `answers[j].ok` first. `null` in `answer`, `chosen` or `applies`
 means Sage is not sure.
 
-**Billing:** `units = max(questions, ceil(tokens/4000)) + images +
-searches`. Each question is a unit, so ten yes/no questions on one
-document cost 10. One tags question over 10 (or 120) labels costs 1, so
-when you have many labels, use tags. Reasoning is free.
+**Billing:** `units = ceil(tokens/4000) + images + searches`. The
+document is the unit, not the question, so ten yes/no questions on one
+document cost 1. One tags question over 10 (or 120) labels also costs 1.
+Reasoning is free.
 
 Plans (2026-09): Developer $14 / 10k units ($1.40 per 1k) · Starter $49 /
 60k ($0.82) · Pro $99 / 175k ($0.57) · Growth $249 / 600k ($0.42).
@@ -314,19 +314,6 @@ calls, so Sage is about 3× cheaper on Developer and 9× on Growth
 channel on untrusted input, and with the calibrated probability. A cheap
 small LLM on an offline job can still beat Sage on price.
 
-**Advice from Sage v0.8 that is now wrong** (you may find it in old
-notes):
-- "N questions on one document cost 1 unit." Now it's N. Use tags.
-- "Tags can't carry a description." Now the name is the description.
-- "Choice confidence is useless." Now choice returns `null` on near-ties.
-- "`latency_mode: fast` packs questions together." Now `latency_mode`
-  only affects `choice`: `fast` (default) or `quality` (~100 ms slower,
-  more accurate; use it for rules-heavy picks).
-- "Thresholds from v0.8." Re-sweep: on our injection set the best
-  threshold moved from 0.70 to ~0.51 on v1.2. Even the same version
-  name can change: Levanto updated v1.2 on 2026-10-01 and the best
-  wording on that set flipped. Re-sweep on a schedule.
-
 **Reasoning** (top-level `reasoning`, default `off`, not billed):
 - `off` for gates and hot paths (~100–450 ms).
 - `auto` for policy judgments.
@@ -334,6 +321,9 @@ notes):
   brackets, refund policy, game moves). Up to 10 s; set your timeout
   above that.
 - Each answer's `meta.reasoning.ran` says whether it thought.
+
+`latency_mode` (top level) only affects `choice`: `fast` (default) or
+`quality` (~100 ms slower, more accurate; use it for rules-heavy picks).
 
 **Documents that work best:**
 - Sage sees only `content` and the question. Put in the content every
@@ -940,12 +930,8 @@ see it. Update this file; it is the product.
 - Check what an error turns into at every layer. A parse failure that
   means "safe" is a hole, whatever model sits behind it.
 - If a regex ties Sage on your golden set, the set is too easy.
-- Thresholds move between Sage versions (0.70 → 0.51 on the same set,
-  v0.8 → v1.2). Re-sweep on every `meta.model` change, and on a schedule:
-  a service update on 2026-10-01 kept the name v1.2 and still flipped
-  which wording won.
 - Sage beat Sonnet on a gate where an 8-second wait didn't matter, but
-  on price alone it barely won (v0.8, 2026-08). Price changes; check
+  on price alone it barely won (2026-08). Price changes; check
   before you pitch it.
 - Severity scoring of audit findings lost badly (3/16, 2026-09-30): Sage
   can't see the code the judgment depends on.

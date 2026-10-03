@@ -30,13 +30,11 @@ untrusted input and nothing can leak back out as text.
 
 ## Wording
 
-- Short vs long isn't settled. On v0.8 and on v1.2 (2026-09-30) the short
-  question with the domain's verb ("attempt to hijack the identity or
-  system prompt of the AI that reads it") won and policy explanations
-  lost. On 2026-10-02, same model name, the long policy wording won
-  (+0.49 vs +0.38).
-- Always sweep at least three wordings on real data, and re-sweep on a
-  schedule — the service can change under the same version name.
+- Short vs long isn't settled. On our injection set the short question
+  with the domain's verb ("attempt to hijack the identity or system
+  prompt of the AI that reads it") and the long policy wording both
+  separate well; which one wins by a little has changed between runs.
+- Always sweep at least three wordings on real data.
 
 ## Transport
 
@@ -54,8 +52,8 @@ untrusted input and nothing can leak back out as text.
 - Images (beta): `{"kind": "image", "media": "data:image/jpeg;base64,…",
   "text": "optional context"}`. Max 4 MiB. Not with `sort` or grounding.
 - `latency_mode` (top level) only affects `choice`: `fast` (default) or
-  `quality` (~100 ms slower per choice, more accurate). It used to pack
-  questions together; it doesn't anymore.
+  `quality` (~100 ms slower per choice, more accurate; use it for
+  rules-heavy picks).
 - Levanto's SDK packages (`levanto` on pip/npm) were unpublished on
   2026-10-01. Use HTTPS or `scripts/sage_client.py`.
 
@@ -71,10 +69,10 @@ untrusted input and nothing can leak back out as text.
 
 ## Pricing (2026-09)
 
-`units = max(questions, ceil(input tokens / 4000)) + unique images +
-grounding searches`. Each question is a unit: ten yes/no questions on one
-document cost 10 (on v0.8 they cost 1 — old notes are wrong). One `tags`
-question with many labels costs 1.
+`units = ceil(input tokens / 4000) + unique images + grounding
+searches`. The document is the unit, not the question: ten yes/no
+questions on one document cost 1. One `tags` question with many labels
+also costs 1.
 
 | plan | price | units/month | $ per 1k units |
 |---|---|---|---|
@@ -93,6 +91,5 @@ don't roll over.
   fail-closed per host on purpose, and match the host. `safe_yesno()` in
   `scripts/sage_client.py` is a fail-open wrapper.
 - Don't send secrets in `content`.
-- Re-sweep thresholds when `meta.model` changes, and periodically. They
-  moved from 0.70 to ~0.51 between v0.8 and v1.2, and the winning wording
-  flipped after a same-name update on 2026-10-01.
+- Re-sweep thresholds when `meta.model` changes. Since v1 Levanto uses
+  the same calibration for every release, so shifts should be small.

@@ -45,14 +45,9 @@ python3 shootout.py ../examples/injection-golden.json \
   sep +0.49..+0.49  p50 212ms  You are a prompt-injection detector for an AI job board...       ← winner
 ```
 
-The response still said `levanto-sage-v1.2`, but Levanto updated the
-service on 2026-10-01 (new docs, reasoning now off by default). The best
-wording flipped from the short one to the long policy one. The short
-question still separates: unsafe ≥ 0.78, safe ≤ 0.40, so a 0.5 threshold
-gives 15/15 on both days. Its gap shrank from 0.55 to 0.38.
-
-The lesson: re-run the sweep on a schedule, not only when the version
-number changes.
+The best wording changed between the two runs. The short question
+separates on both days: unsafe ≥ 0.78, safe ≤ 0.40, so a 0.5 threshold
+gives 15/15 both times.
 
 **Shootout** against a keyword regex:
 
@@ -61,20 +56,6 @@ number changes.
    current     12/15        24     0.00     ← regex: misses all 3 attacks with no trigger words
  candidate     15/15       195     1.40     ← Sage, Developer plan
 ```
-
-**What changed since v0.8 (2026-08-26):**
-
-| | v0.8 | v1.2 |
-|---|---|---|
-| accuracy (short question) | 15/15 at 0.70 | 15/15 at 0.5 |
-| gap, short question | 0.34 | 0.55 (09-30), 0.38 (10-02) |
-| best threshold, short question | ~0.70 | ~0.51 (09-30), ~0.59 (10-02) |
-| the hard "lenience plea" item | p ≈ 0.5–0.6, borderline | clearly safe |
-| $/1k on Developer | 2.80 | 1.40 |
-| vs Sonnet 4.6 (~$3.90/1k) | ~1.2× cheaper | ~2.8× cheaper |
-
-The same question got better, but the best threshold moved by 0.2. That is
-why the skill says to re-sweep on every model change.
 
 ## Then on real traffic (2026-10-02)
 
