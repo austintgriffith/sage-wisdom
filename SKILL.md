@@ -219,7 +219,8 @@ a small golden set as a regression test, and ship if the user wants to.
    - **Misses:** list each miss with its content, so the user can see
      them.
    - **Cost:** Sage $ per 1k items = units per item × plan price per unit
-     × 1,000 (Developer: 1 unit × $0.0014 × 1,000 = $1.40).
+     × 1,000 (Developer: 1 unit × $0.0014 × 1,000 = $1.40). Units per
+     item = 1 per 4k tokens + images, however many questions you batch.
 
    For yes/no gates in Python, `scripts/sweep.py` (wordings) and
    `scripts/shootout.py` (today vs Sage) already do this.
@@ -298,10 +299,12 @@ Read the answers at `results[0].answers[j].result.result`:
 Check `answers[j].ok` first. `null` in `answer`, `chosen` or `applies`
 means Sage is not sure.
 
-**Billing:** `units = ceil(tokens/4000) + images + searches`. The
-document is the unit, not the question, so ten yes/no questions on one
-document cost 1. One tags question over 10 (or 120) labels also costs 1.
-Reasoning is free.
+**Billing:** `units = ceil(tokens/4000) + images + searches`, at least
+1 per call. The document is the unit, not the question: ten yes/no
+questions on one document in one `/decide/batch` group cost 1. The same
+ten questions as ten separate calls cost 10, so **batch every question
+about a document into one call**. One tags question over 10 (or 120)
+labels also costs 1. Reasoning is free.
 
 Plans (2026-09): Developer $14 / 10k units ($1.40 per 1k) · Starter $49 /
 60k ($0.82) · Pro $99 / 175k ($0.57) · Growth $249 / 600k ($0.42).
@@ -309,10 +312,14 @@ Growth adds 128K context; the others take ~32K tokens per request.
 Hitting the allowance returns 402 until next month.
 
 **Price honestly.** A short Sonnet-class verdict costs roughly $3–4 per 1k
-calls, so Sage is about 3× cheaper on Developer and 9× on Growth
-(2026-09). Real, but rarely the headline: lead with speed, with no text
-channel on untrusted input, and with the calibrated probability. A cheap
-small LLM on an offline job can still beat Sage on price.
+calls. For one question per document, Sage is about 3× cheaper on
+Developer and 9× on Growth. Each extra question about the same document
+is free on Sage, so five checks on one document cost the same 1 unit.
+A Sonnet call can also answer several questions at once, but its prompt
+and output grow with each one. Price is real, but rarely the headline:
+lead with speed, with no text channel on untrusted input, and with the
+calibrated probability. A cheap small LLM on an offline job can still
+beat Sage on price.
 
 **Reasoning** (top-level `reasoning`, default `off`, not billed):
 - `off` for gates and hot paths (~100–450 ms).
@@ -382,7 +389,7 @@ curl -s https://sage.levanto.ai/decide/batch \
 12. **Supervising long-running agents:** unattended agents that may stall or drift
 13. **Skipping agent passes a job doesn't need:** a pipeline that runs every pass on every job
 14. **Questions and rubric scores on images:** photos, screenshots and drawings
-15. **Game and simulation agents:** choosing moves in real time
+15. **Game and simulation agents:** choosing moves in real time, and NPCs driven by a written personality
 16. **Merging duplicate findings:** many agents or tools report the same bug in different words
 
 Each recipe: **Use when** · **Content** · **Ask** · **Then** (code) ·
@@ -874,9 +881,33 @@ Code sees, Sage plays: real-time game and simulation agents.
   choice "Which action best advances right without dying?"
     run · run_jump · walk · wait
   ```
+- **NPCs with a personality:** put the character description in
+  `content` with the state, and put each legal move's consequence in its
+  option description. Writers change behavior by editing the
+  description, not by tuning weights:
+  ```
+  content:  "A nervous goblin intern on day three of the job. Scared of the hero,
+             but far more scared of Gorbo, his supervisor, who fires interns who
+             don't fight. Brave when the hero is hurt or when he outnumbers them.
+             You are Goblin Intern, 2/2 hearts. The hero has 11/12 hearts. ..."
+  choice "You are the Goblin Intern. Pick your move for this round, true to your personality."
+    attack: Go after the hero and stab for 1. They are 3 tiles away; you can reach them this turn.
+    flee:   Back away from the hero. You have 2 of 2 hearts.
+    jeer:   Stay put and make rude noises. Achieves nothing, and Gorbo is writing down who isn't fighting.
+  ```
 - **Then:** code presses the button, advances the game, and asks again.
-  If the answer is `null`, play Sage's top option.
+  If the answer is `null`, play Sage's top option, or show it as a
+  hesitation (Rogblox draws a "?" over the monster). Put every monster
+  that needs a move this turn in one batch call. Skip Sage when there is
+  only one legal move. Keep the old code as a fallback for errors and
+  timeouts.
 - **Proven:**
+  - **Rogblox on GrowBlocks** (reported by the team, 2026-09): 40
+    monster types driven by written personalities, one batched request
+    per round, 557 batched calls in development, local fallback after
+    3.5 s. Sage also picks room line-ups from 111 encounters (`choice`)
+    and floor difficulty (`scale`). Case study:
+    https://levanto.ai/case-study/growblocks-monster-descriptions-gameplay
   - **Super Mario Bros:** Sage cleared World 1-1 to the flag.
   - Focused facts plus distinct options: 97% decisive answers at ~370 ms
     and ~108 tokens.

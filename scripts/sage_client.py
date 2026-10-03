@@ -10,8 +10,9 @@ scripts use this file (no installs). What it handles for you:
     pass can take up to 10 s, so timeouts sit above that when it's on.
   - `latency_mode` only affects choice: "fast" (API default) or "quality".
   - `null` means "not sure": yesno answer, tags applies, choice chosen.
-  - Billing: one unit per document per 4k tokens, +1 per image. Ten
-    yesno questions on one document = 1 unit. 402 = allowance used up.
+  - Billing: per call, 1 unit per 4k tokens of document, +1 per image.
+    Ten yesno questions on one document in one ask() = 1 unit; ten
+    separate yesno() calls = 10. 402 = allowance used up.
 
 Usage as a library:
     from sage_client import yesno, ask, tags, safe_yesno

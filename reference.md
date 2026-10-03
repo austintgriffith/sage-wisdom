@@ -71,9 +71,11 @@ untrusted input and nothing can leak back out as text.
 ## Pricing (2026-09)
 
 `units = ceil(input tokens / 4000) + unique images + grounding
-searches`. The document is the unit, not the question: ten yes/no
-questions on one document cost 1. One `tags` question with many labels
-also costs 1.
+searches`, at least 1 per call. The document is the unit, not the
+question: ten yes/no questions on one document in one `/decide/batch`
+group cost 1; the same ten as separate calls cost 10. An image repeated
+in one call counts once. One `tags` question with many labels also
+costs 1. Source: docs.levanto.ai/pricing.md (2026-10-03).
 
 | plan | price | units/month | $ per 1k units |
 |---|---|---|---|
@@ -83,8 +85,10 @@ also costs 1.
 | Growth | $249 | 600,000 | 0.42 |
 
 A short Sonnet 4.6 verdict (~1k tokens in, ~60 out) is about $3.90 per
-1k calls, so Sage is ~2.8× cheaper on Developer and ~9× on Growth. Units
-don't roll over.
+1k calls, so for one question per document Sage is ~2.8× cheaper on
+Developer and ~9× on Growth. Extra questions batched on the same
+document add nothing, so the gap grows with the number of checks.
+Units don't roll over.
 
 ## Operational
 
