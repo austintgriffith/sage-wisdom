@@ -17,10 +17,10 @@ Usage:
 Output: per-phrasing separation (min yes-labeled probability minus max
 no-labeled probability) for each run, plus a recommended threshold and
 escalation band for the winner. The sep_min..sep_max range across runs tells
-you whether your model version is stable per input (v1.2 nearly is: one
-small wobble seen, 2026-09-30) or wobbles (v0.6 did) — if it wobbles, the
-spread is your margin of safety and a single run lies. Either way, set the threshold from
-real traffic with margin. Cost: len(samples) x len(phrasings) x runs units.
+you whether the model is stable per input (v1.2 nearly is: one small
+wobble seen) — if it wobbles, the spread is your margin of safety and a
+single run lies. Either way, set the threshold from real traffic with
+margin. Cost: len(samples) x len(phrasings) x runs units.
 """
 import json, statistics, sys, time
 from sage_client import yesno, load_golden
@@ -73,8 +73,7 @@ def main():
     print(f"  tightest gap across {runs} runs: {lo:.2f} .. {hi:.2f}")
     print(f"  threshold ~{thr:.2f}; escalate the {band_lo:.2f}-{band_hi:.2f} band "
           f"to your expensive model instead of deciding")
-    print("  re-run this sweep whenever meta.model changes — calibration moves "
-          "silently across versions.")
+    print("  re-run this sweep whenever meta.model changes.")
 
 
 if __name__ == "__main__":

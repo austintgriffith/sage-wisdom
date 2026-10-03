@@ -32,8 +32,9 @@ untrusted input and nothing can leak back out as text.
 
 - Short vs long isn't settled. On our injection set the short question
   with the domain's verb ("attempt to hijack the identity or system
-  prompt of the AI that reads it") and the long policy wording both
-  separate well; which one wins by a little has changed between runs.
+  prompt of the AI that reads it") separated on both runs (+0.55, then
+  +0.38). The long policy wording failed on one run (−0.07) and won the
+  other (+0.49). See `examples/README.md`.
 - Always sweep at least three wordings on real data.
 
 ## Transport

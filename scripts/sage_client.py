@@ -10,9 +10,8 @@ scripts use this file (no installs). What it handles for you:
     pass can take up to 10 s, so timeouts sit above that when it's on.
   - `latency_mode` only affects choice: "fast" (API default) or "quality".
   - `null` means "not sure": yesno answer, tags applies, choice chosen.
-  - Billing (2026-09): one unit PER QUESTION (or per 4k tokens, whichever
-    is higher), +1 per image. Ten yesno questions = 10 units. One tags
-    question with many labels = 1 unit. 402 = allowance used up.
+  - Billing: one unit per document per 4k tokens, +1 per image. Ten
+    yesno questions on one document = 1 unit. 402 = allowance used up.
 
 Usage as a library:
     from sage_client import yesno, ask, tags, safe_yesno
@@ -77,7 +76,7 @@ def batch(groups, timeout=30, *, reasoning="off", latency_mode=None):
 
 
 def ask(content, questions, timeout=30, *, reasoning="off", latency_mode=None):
-    """Several questions about one document (one unit EACH). Returns
+    """Several questions about one document (billed once). Returns
     {id: decision} for answers with ok=True, e.g. {"q": {"answer": "yes",
     "probability": 0.91}}."""
     resp = batch([(content, questions)], timeout,
