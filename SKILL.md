@@ -88,6 +88,11 @@ a small LLM. Say so when that's the case.
 needs `SAGE_API_KEY` (keys at https://platform.levanto.ai). If it's not
 set, say so once. Never write a key to a tracked file.
 
+**How to call it.** A working request is in §4 (*Connect*), checked live
+on 2026-10-04 against Sage v1.3. The API changes, so read
+https://docs.levanto.ai/llms.txt before your first call and trust the
+docs over this file where they differ. Tell the user which one you used.
+
 **Dated numbers go stale.** Every price, latency and threshold in this
 file has a date or a model version. If it's older than ~3 months, or a
 response's `meta.model` is newer than the one named here, check the live
