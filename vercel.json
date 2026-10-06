@@ -1,3 +1,25 @@
 {
-  "rewrites": [{ "source": "/skill.md", "destination": "/SKILL.md" }]
+  "rewrites": [
+    {
+      "source": "/skill.md",
+      "destination": "/SKILL.md"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/reference.md",
+      "destination": "/skill.md",
+      "permanent": false
+    },
+    {
+      "source": "/examples/:path*",
+      "destination": "/skill.md",
+      "permanent": false
+    },
+    {
+      "source": "/scripts/:f(sage_client.py|sweep.py|shootout.py)",
+      "destination": "/skill.md",
+      "permanent": false
+    }
+  ]
 }
