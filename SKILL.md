@@ -89,7 +89,7 @@ needs `SAGE_API_KEY` (keys at https://platform.levanto.ai). If it's not
 set, say so once. Never write a key to a tracked file.
 
 **How to call it.** A working request is in §4 (*Connect*), checked live
-on 2026-10-04 against Sage v1.3. The API changes, so read
+on 2026-10-13 against Sage v1.4. The API changes, so read
 https://docs.levanto.ai/llms.txt before your first call and trust the
 docs over this file where they differ. Tell the user which one you used.
 
@@ -241,13 +241,13 @@ a small golden set as a regression test, and ship if the user wants to.
   the error path again on the code you wrote.
 - Write down the wording, the threshold and the model version.
 
-## 4 · Sage cheat sheet (levanto-sage-v1.3, checked against the docs 2026-10-05)
+## 4 · Sage cheat sheet (levanto-sage-v1.4, checked against the docs 2026-10-13)
 
 | kind | best for | tip |
 |---|---|---|
 | `yesno` | one gate, one fact | Threshold on `probability`. |
 | `tags` | many labels on one document, **any number of which can apply** | Up to 120 labels, judged together. Put the definition in the name: `"promotion: advertises the poster's own product"`. |
-| `choice` | **exactly one** of N (≤120; ≤20 with an image) | Shuffle the options. `probabilities` sum to 1, so you can threshold on them directly. |
+| `choice` | **exactly one** of N (≤256; ≤20 with an image) | Shuffle the options. `probabilities` sum to 1, so you can threshold on them directly. |
 | `scale` | a graded reading on **your own rubric** | 2–26 levels, distinct whole numbers (`0`–`4`, `1`–`5`, `0`–`10`). Use `expectation` (in your levels' units) or `probabilities` (sum to 1). |
 | `sort` | ranking up to 120 items | One call for the whole list. |
 
@@ -311,8 +311,8 @@ means Sage is not sure.
 - **Input tokens:** everything Sage reads. It reads the content once per
   question, once per tag in `tags`, and once per item in `sort`. Images
   count as input tokens.
-- **Output tokens:** one per answer, plus thinking tokens when Sage
-  reasons.
+- **Output tokens:** thinking tokens when Sage reasons, plus a few per
+  tag in `tags`. Yes/no and choice answers bill 0.
 - **Searches:** each grounding search that runs.
 
 Every response reports `meta.usage` (`input_tokens`, `output_tokens`,
@@ -394,11 +394,15 @@ curl -s https://sage.levanto.ai/decide/batch \
 - **Always send a real `User-Agent`.** Default library agents such as
   `Python-urllib` get a 403.
 - `GET /ready` is a free health check that needs no key: 200 means ready.
+  `GET /models` (no key) returns the live model id.
+- Already calling Jev? Sage also serves Jev's request format at
+  `POST /v1/systemone`: change the base URL, key and model name
+  (`sage-latest`). Details: https://docs.levanto.ai/systemone.md
 - Send only the fields shown in §4. Unknown fields return 400, and the
   message says which field.
 - Errors: 400 bad request or a limit exceeded · 401 bad key ·
-  402 included usage used up · 403 missing User-Agent · 503 warming up or
-  content too long, so retry after 2 s. A `null` answer is a 200, not an
+  402 included usage used up · 403 missing User-Agent · 503 warming up (retry after 2 s)
+  or content too long (shorten it; retrying won't help). A `null` answer is a 200, not an
   error: route it, don't retry it.
 - `POST /usage/estimate` takes the same body as `/decide/batch` and
   returns the token count without making a decision.
